@@ -1,0 +1,125 @@
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/ml-group/!svn/ver/556/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions
+END
+SOD.m
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/SOD.m
+END
+energyclassify.m
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/energyclassify.m
+END
+count.m
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/count.m
+END
+progressbar.m
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/progressbar.m
+END
+distance.m
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/distance.m
+END
+scat.m
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/ml-group/!svn/ver/556/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/scat.m
+END
+mink.m
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/mink.m
+END
+extractpars.m
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/extractpars.m
+END
+pca.m
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/pca.m
+END
+randMb.m
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/randMb.m
+END
+cdist.m
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/cdist.m
+END
+sd.m
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/sd.m
+END
+findimps3m.m
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/findimps3m.m
+END
+noticks.m
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/noticks.m
+END
+makesplits.m
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/makesplits.m
+END
+distance2.m
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/distance2.m
+END
+findimps3Dm.m
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/findimps3Dm.m
+END
+vec.m
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/vec.m
+END
+mat.m
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/mat.m
+END
+mexall.m
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/helperfunctions/mexall.m
+END

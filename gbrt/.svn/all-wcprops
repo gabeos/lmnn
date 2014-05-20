@@ -1,0 +1,71 @@
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/ml-group/!svn/ver/556/trunk/maintenance/LMNN/mLMNN2.4/gbrt
+END
+evaltree.m
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/gbrt/evaltree.m
+END
+buildlayer_sqrimpurity_openmp.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/ml-group/!svn/ver/556/trunk/maintenance/LMNN/mLMNN2.4/gbrt/buildlayer_sqrimpurity_openmp.cpp
+END
+buildlayer_sqrimpurity.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 90
+/svn/ml-group/!svn/ver/556/trunk/maintenance/LMNN/mLMNN2.4/gbrt/buildlayer_sqrimpurity.cpp
+END
+buildlayer_sqrimpurity_multif.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 97
+/svn/ml-group/!svn/ver/556/trunk/maintenance/LMNN/mLMNN2.4/gbrt/buildlayer_sqrimpurity_multif.cpp
+END
+preprocesslayer_sqrimpurity.m
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/gbrt/preprocesslayer_sqrimpurity.m
+END
+getlayer.m
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/gbrt/getlayer.m
+END
+make.m
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/gbrt/make.m
+END
+buildtree.m
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/gbrt/buildtree.m
+END
+buildlayer_sqrimpurity_openmp_multi_limit.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/ml-group/!svn/ver/556/trunk/maintenance/LMNN/mLMNN2.4/gbrt/buildlayer_sqrimpurity_openmp_multi_limit.cpp
+END
+buildlayer_sqrimpurity_openmp_multi.cpp
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/ml-group/!svn/ver/556/trunk/maintenance/LMNN/mLMNN2.4/gbrt/buildlayer_sqrimpurity_openmp_multi.cpp
+END
+evalensemble.m
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/ml-group/!svn/ver/4/trunk/maintenance/LMNN/mLMNN2.4/gbrt/evalensemble.m
+END
