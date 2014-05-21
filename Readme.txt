@@ -19,11 +19,12 @@ If you use this code in scientific work, please cite:
 
 
 *** Changelog
-Update 10/7/2013
-Version 2.4.1b:
-- Improved Octave compatibility (Thanks to Oliver Obst)
-- reordered text output in demo.m
-
+Update 23/04/2014
+- Release version 2.5:
+	- introduce new parameter "subsample" (subsample 10% of constraints by default)
+	- improve convergence criteria
+Update 10/04/2013
+- fixed a small but critical bug in applypca.m (this function is optional as pre-processing)
 Update 09/17/2013
 Version 2.4.1:
 - Set default validation parameter to 0.2

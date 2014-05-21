@@ -14,12 +14,12 @@ function [L,Det]=lmnn2(x,y,varargin)
 % stepsize = (default 1e-09)
 % outdim = (default: size(x,1)) output dimensionality
 % maxiter = maximum number of iterations (default: 1000)
-% validation = (def 0) 1-fraction of training data to be used as
-%               validation set (best output is stored in Det.bestL)
-% validationstep = (def 50) every "valcount" steps do validation
+% validation = (def 0) fraction of data used as validation 
+%               (e.g. 0.2 means 20% of the training data is used as val)
+% validationstep = (def 15) every "valcount" steps do validation
 % quiet = {0,1} surpress output (default=0)  
 % mu = must be within (0,1) - tradeoff between loss and regularizer (default mu=0.5)
-%
+% subsample = (default 0.1) percentage of constraints that are subsampled (set to 1 for exact solution)
 %
 % Specific parameters (for experts only):
 % correction = (def 15) how many steps between each update 
@@ -85,11 +85,12 @@ else
 end;
 
 
-pars.outdim=size(x,1);
 if(exist('L','var')~=1)
+	pars.outdim=size(x,1);
     fprintf(['Initial starting point not specified.\nStarting with PCA.\n']);  
- %L=eye(size(x,1));
- L=pca(x)';
+ 	L=pca(x)';
+else
+	pars.outdim=size(L,1);	
 end;
 tic
 
@@ -102,16 +103,16 @@ if(size(x,1)>length(L)) error('x and L must have matching dimensions!\n');end;
 
  % set parameters
  pars.diagonal=0;
- pars.stepsize=1e-07;
+ pars.stepsize=1e-09;
  pars.minstepsize=0;
  pars.tempid=-1;
- pars.maxiter=1000;
+ pars.maxiter=3000;
  pars.factor=1.1;
  pars.correction=15;
  pars.thresho=1e-7;
  pars.thresha=1e-22;
  pars.ifraction=1;
- pars.scale=0;
+ pars.scale=1;
  pars.obj=1;
  pars.quiet=0;
  pars.classsplit=0;
@@ -130,20 +131,17 @@ if(size(x,1)>length(L)) error('x and L must have matching dimensions!\n');end;
  pars.treesize=50;
  pars.valindex=[];
  pars.checkup=2; %0=notree 1=tree 2=choose
+ pars.subsample=min(max(2000/length(y),0.1),1);
 
- pars.pars=[]
+ pars.pars=[];
  
 pars=extractpars(varargin,pars);
 
 if isstruct(pars.pars), pars=pars.pars;end;
-
-if(~pars.quiet),fprintf('LMNN stable version 2.2\n');end;
-
-
-if pars.diagonal, pars.obj=3;L=eye(size(L)); end;
+if(~pars.quiet),fprintf('LMNN stable version 2.4b\n');end;
+if pars.diagonal, pars.obj=2;L=eye(size(L)); end;
 
 L=L(1:pars.outdim,:);
-
 
 % verification dataset
 %i=randperm(size(x,2));
@@ -214,252 +212,142 @@ nimp=zeros(1,pars.maxiter);
 
 if(~pars.quiet) fprintf('Total number of genuine pairs: %i\n',size(gen,2));end;
 
-
-%tic;[imp]= checkup(L,x,y,NN(end,:),pars);toc
- [imp]= checkup(L,x,y,NN(end,:),pars,1);
-%all(all(imp==imp0))
-%keyboard;
-%t2=toc;
-%keyboard;
-
-if(size(imp,2)>pars.maximp0)
- ip=randperm(size(imp,2));
- ip=ip(1:pars.maximp0);
- imp=imp(:,ip);
-end;
-
-
-
-
-if(~pars.quiet)fprintf('Total number of imposture pairs: %i\n',size(imp,2));end;
- dfG=vec(SOD(x,gen(1,:),gen(2,:)));
+dfG=vec(SOD(x,gen(1,:),gen(2,:)));
 
 
 if(pars.scale)
  Lx=L*x;
- sc=sqrt(mean(sum( ((Lx-Lx(:,NN(end,:)))).^2,1)));
- L=L./(sc+2);
+ sc=sqrt(mean(sum(((Lx-Lx(:,NN(end,:)))).^2,1)));
+ L=2.*L./sc;
 end;
 
 df=zeros(D^2,1);
-correction=pars.correction;
+correction=1;
 ifraction=pars.ifraction;
 stepsize=pars.stepsize;
-lastcor=1;
 
 
-
+% flush gradient
 for nnid=1:Kg; a1{nnid}=[];a2{nnid}=[];end;
 df=zeros(size(dfG));
+imp=zeros(2,0);
 
 % Main Loop
 for iter=1:pars.maxiter
  % save old position
  Lold=L;dfold=df;
  for nnid=1:Kg; a1old{nnid}=a1{nnid};a2old{nnid}=a2{nnid};end;
-if(iter>1)L=step(L,mat((dfG.*pars.mu+df.*(1-pars.mu))),stepsize,pars);end;
-
-
-if(~pars.quiet)fprintf('%i.',iter);end;
-
-Lx=L*x;
-%Lx2=sum(Lx.^2);
-totalactive=0;
-
- 
-
-g0=cdist(Lx,imp(1,:),imp(2,:));
-
-
-kk=1;
-Ni=zeros(Kg,N);
-for nnid=kk:Kg
- Ni(nnid,:)=(sum((Lx-Lx(:,NN(nnid,:))).^2,1)+1);
-end;
-
-
- g1=Ni(:,imp(1,:)); 
- g2=Ni(:,imp(2,:)); 
- act1=[];act2=[];
-
-if(pars.validation_>0 && (mod(iter,pars.validationstep)==0 | iter==1))
- try
-    verify(iter)=knnclassifytreeomp([],Lx,y,L*xv,yv,Kg,'train',0);
- catch
-     lasterr()
-     keyboard;
- end;
- fprintf('kNN validation error: %2.2f ',verify(iter)*100);
- 
- 
- if(verify(iter)<=besterr) 
-     fprintf('<= %2.2f   :-) %i/%i\n',besterr*100,earlycounter,pars.earlystopping);besterr=verify(iter);bestL=L;Det.bestiter=iter;
-     earlycounter=0;
- else
-     fprintf('> %2.2f   :-( %i/%i\n',besterr*100,earlycounter,pars.earlystopping);earlycounter=earlycounter+1;
- end;
- if(pars.earlystopping>0 & earlycounter>pars.earlystopping)
-       fprintf('Validation error is no longer improving!\n');break;
- end;
-end;
-%clear('Lx','Lx2');
- 
-% objv=dfG'*vec((L'*L));
-for nnid=Kg:-1:kk
-  act1=find(g0<g1(nnid,:)); 
-  act2=find(g0<g2(nnid,:)); 
-
- active=[act1 act2];
-
- if(~isempty(a1{nnid}) | ~isempty(a2{nnid}))
-try
-  [plus1,minus1]=sd(act1(:)',a1{nnid}(:)');
-  [plus2,minus2]=sd(act2(:)',a2{nnid}(:)');
-catch 
- lasterr
- keyboard;
-end;
- else
-  plus1=act1;plus2=act2;
-  minus1=[];minus2=[];
+ % perform gradient step     
+ if(iter>1)L=step(L,mat((dfG.*pars.mu+df.*(1-pars.mu))),stepsize,pars);end;
+ %
+ if(~pars.quiet)fprintf('%i.',iter);end; 
+ % map data x->lx
+ Lx=L*x;
+ % compute distance to target neighbors
+ Ni=zeros(Kg,N);
+ for nnid=1:Kg
+  Ni(nnid,:)=(sum((Lx-Lx(:,NN(nnid,:))).^2,1)+1);
  end;
 
-
-
-% [isminus2,i]=sort(imp(1,minus2));minus2=minus2(i);
- MINUS1a=[imp(1,minus1) imp(2,minus2)]; MINUS1b=[imp(1,[plus1 plus2])];
- MINUS2a=[NN(nnid,imp(1,minus1)) NN(nnid,imp(2,minus2))]; MINUS2b=[imp(2,[plus1 plus2])];
-
- [isplus2,i]= sort(imp(2,plus2));plus2=plus2(i);
- PLUS1a=[imp(1,plus1) isplus2]; PLUS1b=[imp(1,[minus1 minus2])];
- PLUS2a=[NN(nnid,imp(1,plus1)) NN(nnid,isplus2)]; PLUS2b=[imp(2,[minus1 minus2])];
-
- loss1=max(g1(nnid,:)-g0,0);
- loss2=max(g2(nnid,:)-g0,0);
- 
-
-% ;
- [PLUS ,pweight]=count([PLUS1a;PLUS2a]);
- [MINUS,mweight]=count([MINUS1a;MINUS2a]);
-
-
-df2=SODW(x,PLUS(1,:),PLUS(2,:),pweight)-SODW(x,MINUS(1,:),MINUS(2,:),mweight);
-
- df4=SOD(x,PLUS1b,PLUS2b)-SOD(x,MINUS1b,MINUS2b);
- df=df+vec(df2+df4);
-
- a1{nnid}=act1;a2{nnid}=act2;
- totalactive=totalactive+length(active);
-
-end;
-
-
-
-if(any(any(isnan(df))))
-  fprintf('Gradient has NaN value!\n');
-  keyboard;
-end;
-
-%obj(iter)=objv;
-obj(iter)=(dfG.*pars.mu+df.*(1-pars.mu))'*vec(L'*L)+totalactive.*(1-pars.mu);
-
-if(isnan(obj(iter)))
- fprintf('Obj is NAN!\n');
- keyboard;
-end;
-
-nimp(iter)=totalactive;
-delta=obj(iter)-obj(max(iter-1,1));
-if(~pars.quiet)fprintf(['  Obj:%2.2f Nimp:%i Delta:%2.4f max(G): %2.4f             \n   '],obj(iter),nimp(iter),delta,max(max(abs(df))));
-end;
-
-
-
-if(iter>1 & delta>0 & correction~=pars.correction) 
- stepsize=stepsize*0.5;
- if(~pars.quiet)fprintf('***correcting stepsize***\n');end;
- if(stepsize<pars.minstepsize) stepsize=pars.minstepsize;end;
- if(~pars.aggressive)
-  L=Lold;
-  df=dfold;
-  for nnid=1:Kg; a1{nnid}=a1old{nnid};a2{nnid}=a2old{nnid};end;
-  obj(iter)=obj(iter-1);
+ % check validation data set for early stopping
+ if(pars.validation_>0 && (mod(iter,pars.validationstep)==0 | iter==1))
+    verify(iter)=knncl([],Lx,y,L*xv,yv,Kg,'train',0);
+    fprintf('kNN validation error: %2.2f ',verify(iter)*100);
+    if(verify(iter)<=besterr) 
+         fprintf('<= %2.2f   :-) %i/%i\n',besterr*100,earlycounter,pars.earlystopping);besterr=verify(iter);bestL=L;Det.bestiter=iter;
+         earlycounter=0;
+    else
+         fprintf('> %2.2f   :-( %i/%i\n',besterr*100,earlycounter,pars.earlystopping);earlycounter=earlycounter+1;
+    end;
+    if(pars.earlystopping>0 & earlycounter>pars.earlystopping),fprintf('Validation error is no longer improving!\n');break;end;
  end;
-% correction=1;
- hitwall=1;
-else 
-  if(correction~=pars.correction)stepsize=stepsize*pars.stepgrowth;end;
- hitwall=0;
-end;
 
-if(iter>10)
- if (max(abs(diff(obj(iter-3:iter))))<pars.thresho*obj(iter)  | stepsize<pars.thresha)
-  if(pars.correction-correction>=5) 
-     correction=1;
-  else
-    switch(pars.obj)
-     case 0
-      if(~pars.quiet)fprintf('Stepsize too small. No more progress!\n');end;
-      break;
-     case 1
-      pars.obj=0;
-      pars.correction=15;
-      pars.stepsize=1e-9;
-      correction=0;
+ % update working set occasionally
+ correction=correction-1;
+ if correction==0 | mod(iter,500)==0,
+  % every now and so often recompute the gradient from scratch (as inaccuracies accumulate)
+  if iter>2 & (obj(iter-1)<0 |  mod(iter,500)==1),
       for nnid=1:Kg; a1{nnid}=[];a2{nnid}=[];end;
       df=zeros(size(dfG));
-      if(~pars.quiet | 1) 
-        if(~pars.quiet) fprintf('\nVerifying solution! %i\n',obj(iter)); end;
-      end;
-     case 3
-      if(~pars.quiet)fprintf('Stepsize too small. No more progress!\n');end;
-      break;
-     end;
+      %imp=zeros(2,0);
+      fprintf('Flushing gradient!\n');
+   end;
+
+  %%%<<<
+  os=pars.subsample;if isempty(a1{1}), pars.subsample=max(0.5,os);end;
+  Vio=checkup(L,x,y,NN(Kg,:),pars);  
+  pars.subsample=os;clear('os');
+
+
+  Vio=setdiff(Vio',imp','rows')';
+  if(pars.maximp<inf)
+    i=randperm(size(Vio,2));
+    Vio=Vio(:,i(1:min(pars.maximp*(iter>1)+pars.maximp0*(iter==1),size(Vio,2))));
   end;
- end;
-end;
-
-correction=correction-1;
-if(correction==0)
-   if(pars.quiet)fprintf('\n');end;
-   [Vio]=checkup(L,x,y,NN(nnid,:),pars);
-
-   Vio=setdiff(Vio',imp','rows')';
-   if(pars.maximp<inf)
-     i=randperm(size(Vio,2));
-     Vio=Vio(:,i(1:min(pars.maximp,size(Vio,2))));
-   end;
-  
-   ol=size(imp,2);
-    [imp i1 i2]=unique([imp Vio].','rows');
-    imp=imp.';
-    if(size(imp,2)~=ol)
+  ol=size(imp,2);
+  [imp i1 i2]=unique([imp Vio].','rows');
+  imp=imp.';
+  if(size(imp,2)~=ol)
       for nnid=1:Kg;
-	   a1{nnid}=i2(a1{nnid});
-	   a2{nnid}=i2(a2{nnid});
+          a1{nnid}=i2(a1{nnid});
+          a2{nnid}=i2(a2{nnid});
       end;
+  end;
+  if(~pars.quiet)fprintf('Added %i constraints to active set (%i total).\n',size(imp,2)-ol,size(imp,2));end;  
+  %%% <<<  
+  correction=pars.correction;
+ end;
+ 
+ 
+ % compute gradient
+ [impostors,df,a1,a2]=computeGradient(L,Kg,Lx,x,NN,Ni,df,imp,a1,a2);
+ obj(iter)=(dfG.*pars.mu+df.*(1-pars.mu))'*vec(L'*L)+impostors.*(1-pars.mu);
+ nimp(iter)=impostors;
+ delta=obj(iter)-obj(max(iter-1,1));
+ if(~pars.quiet)fprintf(['  Obj:%2.2f Nimp:%i Delta:%2.4f max(G): %2.4f             \n   '],obj(iter),nimp(iter),delta,max(max(abs(df))));end;
+
+ % increase stepsize if it makes good progress, otherwise decrease
+ if(iter>1 & delta>0 & correction~=pars.correction) 
+  stepsize=stepsize*0.5;
+  if(~pars.quiet)fprintf('***correcting stepsize***\n');end;
+  if(stepsize<pars.minstepsize) stepsize=pars.minstepsize;end;
+  if(~pars.aggressive)
+   L=Lold;
+   df=dfold;
+   for nnid=1:Kg; a1{nnid}=a1old{nnid};a2{nnid}=a2old{nnid};end;
+   obj(iter)=obj(iter-1);
+  end;
+ else 
+  if(correction~=pars.correction)stepsize=stepsize*pars.stepgrowth;end;
+ end;
+
+ % check if converged
+ if (iter>10) & (max(abs(diff(obj(iter-3:iter))))<pars.thresho*obj(iter)  | stepsize<pars.thresha)
+    if iter<20, % special case: stuck because initial stepsize was too small
+      stepsize=stepsize*10;
+      continue;
     end;
-
-   
-   if(~pars.quiet)fprintf('Iteration %i: Obj: %f  Added %i active constraints. #Active constraints: %i\n\n',iter,obj(iter),size(imp,2)-ol,size(imp,2));     end;
-   if(ifraction<1)
-     i=1:size(imp,2);
-     imp=imp(:,i(1:ceil(length(i)*ifraction)));
-     if(~pars.quiet)fprintf('Only use %2.2f of them.\n',ifraction);end;
-     ifraction=ifraction+pars.ifraction;
-   end;
-  
-  % put next correction a little more into the future if no new impostors were added
-   if(size(imp,2)-ol<=0) 
-      pars.correction=min(pars.correction*2+2,300);
-      correction=pars.correction-1;
-   else
-     pars.correction=round(pars.correction*pars.factor);
-     correction=pars.correction;
-   end;
-   lastcor=iter;
-end;
-
+    if(pars.correction-correction>=5) 
+       correction=1;
+       continue;
+    end;
+    switch(pars.obj)
+       case 0
+        if(~pars.quiet)fprintf('Stepsize too small. No more progress!\n');end;
+        break;
+       case 1
+        pars.obj=0;
+        pars.correction=15;
+        stepsize=pars.stepsize;
+        correction=1;
+        for nnid=1:Kg; a1{nnid}=[];a2{nnid}=[];end;
+        df=zeros(size(dfG));
+        imp=zeros(2,0);
+        if(~pars.quiet | 1) 
+          if(~pars.quiet) fprintf('\nVerifying solution! %i\n',obj(iter)); end;
+        end;
+    end;
+  end;
 end;
 
 
@@ -480,6 +368,54 @@ if(pars.validation_>0)
 end;
 
 
+function  [impostors,df,a1,a2]=computeGradient(L,Kg,Lx,x,NN,Ni,df,imp,a1,a2)    
+    impostors=0;
+    g0=cdist(Lx,imp(1,:),imp(2,:));
+    g1=Ni(:,imp(1,:)); 
+    g2=Ni(:,imp(2,:)); 
+    for nnid=Kg:-1:1 
+        % identify active constraints
+        act1=find(g0<g1(nnid,:)); 
+        act2=find(g0<g2(nnid,:)); 
+        active=[act1 act2];
+
+        if(~isempty(a1{nnid}) | ~isempty(a2{nnid}))
+          try
+          [plus1,minus1]=sd(act1(:)',a1{nnid}(:)');
+          [plus2,minus2]=sd(act2(:)',a2{nnid}(:)');
+          catch, disp(lasterr);keyboard;end;
+        else
+         plus1=act1;plus2=act2;
+         minus1=[];minus2=[];
+       end;
+    % [isminus2,i]=sort(imp(1,minus2));minus2=minus2(i);
+     MINUS1a=[imp(1,minus1) imp(2,minus2)]; MINUS1b=[imp(1,[plus1 plus2])];
+     MINUS2a=[NN(nnid,imp(1,minus1)) NN(nnid,imp(2,minus2))]; MINUS2b=[imp(2,[plus1 plus2])];
+
+     [isplus2,i]= sort(imp(2,plus2));plus2=plus2(i);
+     PLUS1a=[imp(1,plus1) isplus2]; PLUS1b=[imp(1,[minus1 minus2])];
+     PLUS2a=[NN(nnid,imp(1,plus1)) NN(nnid,isplus2)]; PLUS2b=[imp(2,[minus1 minus2])];
+
+     %loss1=max(g1(nnid,:)-g0,0);
+     %loss2=max(g2(nnid,:)-g0,0);
+    % ;
+     [PLUS ,pweight]=count([PLUS1a;PLUS2a]);
+     [MINUS,mweight]=count([MINUS1a;MINUS2a]);
+
+     df2=SODW(x,PLUS(1,:),PLUS(2,:),pweight)-SODW(x,MINUS(1,:),MINUS(2,:),mweight);
+     df4=SOD(x,PLUS1b,PLUS2b)-SOD(x,MINUS1b,MINUS2b);
+     df=df+vec(df2+df4);
+
+     a1{nnid}=act1;a2{nnid}=act2;
+     impostors=impostors+length(active);
+    end;
+    if(any(any(isnan(df))))
+      fprintf('Gradient has NaN value!\n');
+      keyboard;
+    end;
+
+    
+
 function L=step(L,G,stepsize,pars);
 % do step in gradient direction
 if(size(L,1)~=size(L,2)) pars.obj=1;end;
@@ -487,15 +423,25 @@ switch(pars.obj)
   case 0    % updating Q
      Q=L'*L;
      Q=Q-stepsize.*G;
+     % decompose Q
+     [L,dd]=eig(Q);
+     dd=real(diag(dd));
+     L=real(L);
+     % reassemble Q (ignore negative eigenvalues)
+     j=find(dd<1e-10);
+     if(~isempty(j)) 
+         if(~pars.quiet)fprintf('[%i]',length(j));end;
+     end;
+     dd(j)=0;
+     [temp,ii]=sort(-dd);
+     L=L(:,ii);
+     dd=dd(ii);
+     L=(L*diag(sqrt(dd)))';     
    case 1   % updating L
      G=2.*(L*G);
      L=L-stepsize.*G;     
      return;
-  case 2    % multiplicative update - this is broken
-     Q=L'*L;
-     Q=Q-stepsize.*G+stepsize^2/4.*G*inv(Q)*G;
-     return;
-  case 3
+  case 2 % diagonal L
      Q=L'*L;
 	 Q=Q-stepsize.*G;
 	 Q=diag(Q);
@@ -505,26 +451,6 @@ switch(pars.obj)
    error('Objective function has to be 0,1,2\n');
 end;
 
- 
-% decompose Q
-[L,dd]=eig(Q);
-dd=real(diag(dd));
-L=real(L);
-% reassemble Q (ignore negative eigenvalues)
-j=find(dd<1e-10);
-if(~isempty(j)) 
-    if(~pars.quiet)fprintf('[%i]',length(j));end;
-end;
-dd(j)=0;
-[temp,ii]=sort(-dd);
-L=L(:,ii);
-dd=dd(ii);
-% Q=L*diag(dd)*L';
-L=(L*diag(sqrt(dd)))';
-
-%for i=1:size(L,1)
-% if(L(i,1)~=0) L(i,:)=L(i,:)./sign(L(i,1));end;
-%end;
 
 
 
@@ -554,6 +480,11 @@ gen=[gen1;gen2];
 
 function imp=checkup(L,x,y,NN,pars,~)
 persistent treetime notreetime;
+
+if pars.subsample<1,
+    imp=checkupnotree(L,x,y,NN,pars);
+    return;
+end;    
 if(nargin==6)
     treetime=-1;
     notreetime=-1;
@@ -565,6 +496,14 @@ if(pars.checkup==1 | (pars.checkup==2 & treetime<notreetime))
 else
   imp=checkupnotree(L,x,y,NN,pars);notreetime=toc-t1;
 end;
+% if there are too many constraints - subsample
+if(size(imp,2)>pars.maximp0)
+ ip=randperm(size(imp,2));
+ ip=ip(1:pars.maximp0);
+ imp=imp(:,ip);
+ fprintf('Too many constraints - subsampling %i\n',pars.maximp0)
+end;
+
  
 
 function imp=checkupmtree(L,x,y,NN,pars)
@@ -574,7 +513,7 @@ if(~pars.quiet);fprintf('[Tree] Computing nearest neighbors ...\n');end;
 mL=max(L');
 L=L(find(mL),:);
 Lx=L*x;
-Ni=sum((Lx-Lx(:,NN)).^2,1)+1;
+Ni=sum((Lx-Lx(:,NN)).^2,1)+2;
 un=unique(y);
 
 % build up ball trees
@@ -619,7 +558,7 @@ if(~pars.quiet) fprintf('Computing nearest neighbors ...\n');end;
 [D,N]=size(x);
 
 Lx=L*x;
-Ni=sum((Lx-Lx(:,NN)).^2,1)+1;
+Ni=sum((Lx-Lx(:,NN)).^2,1)+2;
 
 un=unique(y);
 imp=[];
@@ -629,6 +568,14 @@ for c=un(1:end-1)
  if(~pars.quiet)fprintf('All nearest impostor neighbors for class %i :',c);end;
  i=find(y==c);
  index=find(y>c);
+ %keyboard;
+ %% experimental
+ ir=randperm(length(i));ir=ir(1:ceil(length(ir)*pars.subsample));
+ ir2=randperm(length(index));ir2=ir2(1:ceil(length(ir2)*pars.subsample));
+ index=index(ir2);
+ i=i(ir);
+ %% experimental
+
  limps=LSImps2(Lx(:,index),Lx(:,i),Ni(index),Ni(i),pars);
  if(size(limps,2)>pars.maximp)
   ip=randperm(size(limps,2));
@@ -656,23 +603,17 @@ N1=size(X1,2);
 limps=[];
 for i=1:B:N2
   BB=min(B,N2-i);
-  try
-%  newlimps=findimps3Dac(X1,X2(:,i:i+BB), Thresh1,Thresh2(i:i+BB));  % This line 
   newlimps=findimps3Dm(X1,X2(:,i:i+BB), Thresh1,Thresh2(i:i+BB));
   if(~isempty(newlimps) & newlimps(end)==0)    
     [minv,endpoint]=min(min(newlimps));
     newlimps=newlimps(:,1:endpoint-1);
   end;
   newlimps=unique(newlimps','rows')';
-  catch
-    lasterr
-    keyboard;
-    end;
   newlimps(2,:)=newlimps(2,:)+i-1;
   limps=[limps newlimps];
   if(~pars.quiet)fprintf('(%i%%) ',round((i+BB)/N2*100)); end;
 end;
-if(~pars.quiet)fprintf(' [%i] ',size(limps,2));end;
+if(~pars.quiet)fprintf(' [%i]              ',size(limps,2));end;
 
 
 

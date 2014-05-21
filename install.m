@@ -79,20 +79,12 @@ function comperror=compile(filename,force)
 		return;
 	end;
 	try
-	 if exist('OCTAVE_VERSION','builtin'),
-         CXXFLAGS=getenv('CXXFLAGS');
-         if ~strfind(CXXFLAGS,'-fopenmp'),
-             CXXFLAGS=strcat(CXXFLAGS, ' -fopenmp');
-             setenv('CXXFLAGS', CXXFLAGS);
-         end
-         eval(['mex -lgomp ' filename ' ']);
-	 else
-         eval(['mex ' filename ' ' 'CXXFLAGS="\$CXXFLAGS -fopenmp" LDFLAGS="\$LDFLAGS -fopenmp"']);
-        end;
-	 catch
-	  fprintf('[ERROR]\n');
-          fprintf(lasterr);
-          fprintf('\n');
-	  comperror=true;
+	  eval(['mex ' filename ' ' 'CXXFLAGS="\$CXXFLAGS -fopenmp" LDFLAGS="\$LDFLAGS -fopenmp"']);
+		fprintf('[compiled]\n');
+	catch
+		fprintf('[ERROR]\n');
+        fprintf(lasterr);
+        fprintf('\n');
+		comperror=true;
 	end;    
 	

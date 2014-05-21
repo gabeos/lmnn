@@ -11,7 +11,7 @@ if(length(vars)==1)
  p=vars{1};
  s=fieldnames(p);
  for i=1:length(s)
-   eval(['pars.' s{i} '=p.' s{i}]);
+   eval(['pars.' s{i} '=p.' s{i} ';']);
  end;     
 
 else

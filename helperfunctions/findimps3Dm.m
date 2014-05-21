@@ -27,12 +27,12 @@ if(size(t1,1)==1) t1=t1.';end;
 if(size(t2,2)==1) t2=t2.';end;
 
 
-      Dist=distance(X1,X2);  % computes L2-distance matrix
-	  imp1=find(bsxfun(@lt,Dist,t2))';
-      imp2=find(bsxfun(@lt,Dist,t1))';
-	  imps=[imp1 imp2];
+Dist=distance(X1,X2);  % computes L2-distance matrix
+imp1=find(bsxfun(@lt,Dist,t2))';
+imp2=find(bsxfun(@lt,Dist,t1))';
+imps=[imp1 imp2];
 	  
-      [a,b]=ind2sub([N1,N2],[imp1 imp2]);
-	  ind=[a;b];
-	  ind=unique(ind','rows')';
+[a,b]=ind2sub([N1,N2],[imp1 imp2]);
+ind=[a;b];
+ind=unique(ind','rows')';
 	  

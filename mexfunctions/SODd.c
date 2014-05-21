@@ -77,7 +77,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
   /* Get the number of elements in the input argument. */
   inds = mxGetNumberOfElements(prhs[1]);
   if(inds != mxGetNumberOfElements(prhs[2]))
-    mexErrMsgTxt("Sorry, both index vectors must have same length!\n");
+    mxErrMsgTxt("Hey Bongo! Both index vectors must have same length!\n");
   n = mxGetN(prhs[0]);
   m = mxGetM(prhs[0]);
 

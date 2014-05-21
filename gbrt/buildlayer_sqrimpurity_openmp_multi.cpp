@@ -1,9 +1,6 @@
 /*This program chooses the best splits, finds the predictions, and computes the loss for the tree.
  */
 
-#if defined(HAVE_OCTAVE)
-#include <octave/config.h>
-#endif
 #include "mex.h"
 #include "math.h"
 #include <iostream>

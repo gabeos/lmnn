@@ -89,7 +89,7 @@ if(pars.nngraph>0)
 end;
  hold on;
 
-if(pars.axeq==1), axis equal;end;
+if(pars.axeq==1) axis equal;end;
 
 
 
